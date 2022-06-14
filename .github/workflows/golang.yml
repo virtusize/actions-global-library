@@ -1,0 +1,52 @@
+on:
+  workflow_call:
+    inputs:
+      go-version:
+        description: 'Go version'
+        required: true
+        type: string
+      goreleaser-config-path:
+        description: '.goreleaser yaml path'
+        required: true
+        type: string
+      with-release-notes:
+        description: 'Release with notes (depends on release-notes artifact)'
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      gh-token:
+        description: 'GitHub Personal Access Token to Access releases (RELEASES_GITHUB_TOKEN)'
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '${{ inputs.go-version }}'
+      - id: release-notes-download
+        if: inputs.with-release-notes
+        name: Release Notes Download
+        uses: actions/download-artifact@v2
+        with:
+          name: release-notes
+          path: /tmp
+      - name: Release on github
+        if: inputs.with-release-notes
+        uses: goreleaser/goreleaser-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh-token }}
+        with:
+          args: release --release-notes ${{ steps.release-notes-download.outputs.download-path }}/release-notes.txt --rm-dist --skip-sign --config ${{ inputs.goreleaser-config-path }}
+      - name: Release on github
+        if: inputs.with-release-notes != true
+        uses: goreleaser/goreleaser-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh-token }}
+        with:
+          args: release --rm-dist --skip-sign --config ${{ inputs.goreleaser-config-path }}

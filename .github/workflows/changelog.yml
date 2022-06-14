@@ -8,14 +8,12 @@ on:
         default: true
       github-email:
         description: 'Git config user email'
-        required: false
+        required: true
         type: string
-        default: 'vs-polo@virtusize.com'
       github-user:
         description: 'Git config user name'
-        required: false
+        required: true
         type: string
-        default: 'vs-polo'
 
 jobs:
   highest-version-tag:

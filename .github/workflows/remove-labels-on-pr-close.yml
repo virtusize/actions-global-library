@@ -1,0 +1,22 @@
+name: Remove all labels when a PR is closed/merged
+
+on:
+  workflow_dispatch:
+    secrets: 
+      github-token:
+        description: 'Unique secret to use in your workflow.'
+        required: true
+
+jobs:
+  remove-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.github-token}}
+          script: |
+            github.issues.removeAllLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            })

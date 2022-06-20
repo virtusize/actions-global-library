@@ -1,0 +1,35 @@
+name: "Add WIP label if PR title includes 'wip'"
+
+on:
+  workflow_dispatch:
+    secrets: 
+      github-token:
+        description: 'Unique secret to use in your workflow.'
+        required: true
+
+jobs:
+  apply-wip-label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.github-token}}
+          script: |
+            const isWip = (await github.pulls.get({
+                pull_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              }))
+              .data
+              .title.toLowerCase().includes('wip')
+
+            if (isWip) {
+              github.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: ['WIP']
+              })
+            } else {
+              console.log('this PR doesnt have wip in its title')
+            }

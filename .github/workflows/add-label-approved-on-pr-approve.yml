@@ -1,0 +1,42 @@
+name: Add Approve label if a PR is approved
+
+on:
+  workflow_dispatch:
+    secrets:
+      github-token:
+        description: 'Unique secret to use in your workflow.'
+        required: true
+
+jobs:
+  apply-approve-label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.github-token}}
+          script: |
+            const isApproved = (await github.pulls.listReviews({
+                pull_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              }))
+              .data
+              .map(review => review.state)
+              .reverse()[0] === 'APPROVED' // last review
+
+            if (isApproved) {
+              await github.issues.removeAllLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              })
+
+              github.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: ['Approved']
+              })
+            } else {
+              console.log('this review is not an approve')
+            }

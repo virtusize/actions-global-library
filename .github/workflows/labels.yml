@@ -14,7 +14,7 @@ on:
         type: boolean
         default: false
       add-wip-label:
-        description: 'All WIP label if PR title includes 'wip'
+        description: 'All WIP label if PR title includes wip'
         required: false
         type: boolean
         default: false
@@ -58,7 +58,7 @@ jobs:
             }
 
   add-please-review-label:
-    if inputs.add-please-review-label
+    if: inputs.add-please-review-label
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v3
@@ -73,7 +73,7 @@ jobs:
             })
 
   add-wip-label:
-    if inputs.add-wip-label
+    if: inputs.add-wip-label
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v3
@@ -99,7 +99,7 @@ jobs:
             }
 
   remove-label:
-    if inputs.remove-label
+    if: inputs.remove-label
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v3

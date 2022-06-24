@@ -1,0 +1,113 @@
+name: Labels workflow
+
+on:
+  workflow_call:
+    inputs:
+      add-approved-label:
+        description: 'Add label approved on PR approve'
+        required: false
+        type: boolean
+        default: false
+      add-please-review-label:
+        description: 'All PLEASE REVIEW label if a new PR is opened'
+        required: false
+        type: boolean
+        default: false
+      add-wip-label:
+        description: 'All WIP label if PR title includes wip'
+        required: false
+        type: boolean
+        default: false
+      remove-label:
+        description: 'Remove all labels when a PR is closed/merged'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  add-approved-label:
+    if: inputs.add-approved-label
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const isApproved = (await github.pulls.listReviews({
+                pull_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              }))
+              .data
+              .map(review => review.state)
+              .reverse()[0] === 'APPROVED' // last review
+            if (isApproved) {
+              await github.issues.removeAllLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              })
+              github.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: ['Approved']
+              })
+            } else {
+              console.log('this review is not an approve')
+            }
+
+  add-please-review-label:
+    if: inputs.add-please-review-label
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['PLEASE REVIEW']
+            })
+
+  add-wip-label:
+    if: inputs.add-wip-label
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const isWip = (await github.pulls.get({
+                pull_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              }))
+              .data
+              .title.toLowerCase().includes('wip')
+            if (isWip) {
+              github.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: ['WIP']
+              })
+            } else {
+              console.log('this PR doesnt have wip in its title')
+            }
+
+  remove-label:
+    if: inputs.remove-label
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeAllLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            })
